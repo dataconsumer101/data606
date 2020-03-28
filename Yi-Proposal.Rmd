@@ -1,0 +1,124 @@
+---
+title: "DATA 606 Data Project Proposal"
+author: "Leo Yi"
+output: pdf_document
+---
+
+### Data Preparation
+
+```{r setup, echo=TRUE, results='hide', warning=FALSE, message=FALSE}
+options(scipen = 100)
+
+# Loading Packages
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+
+# Gapminder
+gm <- read.csv('https://raw.githubusercontent.com/dataconsumer101/data606/master/gdp_per_captia_usd_inflation_adjusted.csv', stringsAsFactors = F, skip = 4)
+gdp <- select(gm, -Indicator.Name, -Indicator.Code) %>%
+  gather(year, gdp_per_capita, -Country.Name, -Country.Code) %>%
+  mutate(year = as.integer(substr(year, 2, 5))) %>%
+  filter(!is.na(gdp_per_capita))
+
+# Doctors per 1,000 people
+docs <- read.csv('https://raw.githubusercontent.com/dataconsumer101/data606/master/physicians_per_1000_people.csv', stringsAsFactors = F, skip = 4)
+dpk <- select(docs, -Indicator.Name, -Indicator.Code) %>%
+  gather(year, docs_per_k, -Country.Name, -Country.Code) %>%
+  mutate(year = as.integer(substr(year, 2, 5))) %>%
+  filter(!is.na(docs_per_k))
+
+# Combine data
+df <- inner_join(gdp, dpk, by = c('Country.Code' = 'Country.Code',
+                                  'Country.Name' = 'Country.Name',
+                                  'year' = 'year'))
+```
+
+
+### Research question 
+
+**You should phrase your research question in a way that matches up with the scope of inference your dataset allows for.**
+
+Does the gdp per capita of a country in a given year predict the number of doctors per thousand people?
+
+### Cases 
+
+**What are the cases, and how many are there?**
+
+We have 4002 observations of countries in a given year where we know both gdp per capita as well as the number of doctors per thousand people.
+
+### Data collection 
+
+**Describe the method of data collection.**
+
+To find the gdp per capita, we're leveraging the gapminder website. I became familiar with gapminder from watching Hans Rosling's TED talks, and was fascinatied with the information he gathered. I went to the gapminder site, navigated to GDP per capita in US dollars, adjusted for inflation. This led me to the Wolrd This should allow us to compare the sample value across different countries and time.
+
+I found the data for doctors per thousand people through the world bank site. 
+
+For both datasets, I downloaded csv files and uploaded them to GitHub.
+
+### Type of study 
+
+**What type of study is this (observational/experiment)?**
+
+This study is observational.
+
+### Data Source 
+
+**If you collected the data, state self-collected. If not, provide a citation/link.**
+
+[GDP Per Capita](https://data.worldbank.org/indicator/NY.GDP.PCAP.KD)
+  * Gapminder Website:
+    * Data
+      * Economy
+        * Incomes & growth
+          * GDP/capita (US$, inflation-adjusted)
+  
+[Physicians per 1000 People](https://data.worldbank.org/indicator/sh.med.phys.zs)  
+
+
+### Dependent Variable
+
+**What is the response variable? Is it quantitative or qualitative?**
+
+The number of doctors per thousand people is the response variable.
+
+### Independent Variable
+
+**You should have two independent variables, one quantitative and one qualitative.**
+
+The independent variables are country, and year.
+
+The explanatory variable is gdp per capita in 2010 US dollars.
+
+### Relevant summary statistics 
+
+**Provide summary statistics for each the variables. Also include appropriate visualizations related to your research question (e.g. scatter plot, boxplots, etc). This step requires the use of R, hence a code chunk is provided below. Insert more code chunks as needed.**
+
+```{r}
+summary(df$gdp_per_capita)
+summary(df$docs_per_k)
+
+# distribution of gdp_per_capita
+ggplot(df, aes(x = gdp_per_capita)) +
+  geom_density()
+
+boxplot(df$gdp_per_capita)
+
+# distribution of doctors
+ggplot(df, aes(x = docs_per_k)) +
+  geom_density()
+
+boxplot(df$docs_per_k)
+
+# observed correlation
+ggplot(df, aes(x = gdp_per_capita, y = docs_per_k)) +
+  geom_point() 
+
+# x axis log scale
+ggplot(df, aes(x = gdp_per_capita, y = docs_per_k)) +
+  geom_point() +
+  scale_x_log10()
+```
+
